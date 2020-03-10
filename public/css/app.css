@@ -1,0 +1,12 @@
+.chat-list {
+    height: 50vh;
+    max-height: 100%;
+    overflow: auto;
+    border: 1px solid #ccc;
+    padding: 0.5em 1em;
+}
+
+.chat-list i {
+    font-size: 0.75em;
+    opacity: 0.75;
+}

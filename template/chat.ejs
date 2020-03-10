@@ -1,0 +1,85 @@
+<% layout('layout/page') -%>
+<% block('title', "Чат") -%>
+
+<script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
+
+<div id="room">
+  <ul id="room-chat" class="chat-list list-unstyled"></ul>
+  <form class="chat-form">
+    <input disabled class="form-control" autocomplete="off" autofocus placeholder="Сообщение...">
+  </form>
+</div>
+
+<script>
+  const input = $('#room input');
+  const $chat = $('#room-chat');
+  const form = $('#room form');
+
+  function scrollDown() {
+    $chat.animate({
+      scrollTop: $chat[0].scrollHeight
+    }, 100);
+  }
+
+  function printStatus(status) {
+    $('<li>').append($('<i>').text(status)).appendTo($chat);
+    scrollDown();
+  }
+
+  function printMessage(text) {
+    $('<li>').text(text).appendTo($chat);
+    scrollDown();
+  }
+
+  function sendMessage() {
+    var text = input.val();
+    if (!text) return false;
+
+    socket.emit('message', text, function() {
+      printMessage("^_^: " + text);
+    });
+
+    input.val('');
+    return false;
+  }
+
+  const socket = io('', {
+    reconnect: false
+  });
+
+  socket
+      .on('message', function(username, message) {
+        printMessage(username + ": " + message);
+      })
+      .on('leave', function(username) {
+        printStatus(username + " вышел из чата");
+      })
+      .on('join', function(username) {
+        printStatus(username + " вошёл в чат");
+      })
+      .on('connect', function() {
+        printStatus("соединение установлено");
+        form.on('submit', sendMessage);
+        input.prop('disabled', false);
+      })
+
+      .on('disconnect', function() {
+        printStatus("соединение потеряно");
+        form.off('submit', sendMessage);
+        input.prop('disabled', true);
+        this.$emit('error');
+      })
+      .on('logout', function() {
+        location.href = "/";
+      })
+      .on('error', function(reason) {
+        if (reason == "handshake unauthorized") {
+          printStatus("вы вышли из сайта");
+        } else {
+          setTimeout(function() {
+            socket.socket.connect();
+          }, 500);
+        }
+      });
+
+</script>
